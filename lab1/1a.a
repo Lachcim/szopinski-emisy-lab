@@ -9,6 +9,34 @@ LCD_RS      EQU     P3.1
             call    waitMs
             
             jmp     $
+
+sendComm:   clr     LCD_RS              ; clear RS for non-data instructions
+            setb    LCD_E               ; toggle E pin
+            clr     LCD_E
+            
+            mov     A, LCD_DB           ; if the command is clear display or cursor home, wait for 2 ms
+            dec     A
+            jz      longWait
+            dec     A
+            jz      longWait
+            dec     A
+            jz      longWait
+            
+            mov     A, #30              ; otherwise, wait for 40 us (including overhead from jz)
+            call    waitUs
+            ret
+            
+longWait:   mov     A, #2
+            call    waitMs
+            ret
+            
+sendData:   setb    LCD_RS              ; set RS for data instructions
+            setb    LCD_E               ; toggle E pin
+            clr     LCD_E
+            
+            mov     A, #40              ; wait for 40 us
+            call    waitUs
+            ret
             
 waitMs:     rl      A                   ; wait (A * 2 * 2 * 250) microseconds = A milliseconds
 msInner:    mov     R0, #248            ; value 248 accounts for overhead from dec + jnz
