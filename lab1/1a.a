@@ -1,0 +1,26 @@
+LCD_DB      EQU     P1                  ; set symbols for output pins
+LCD_E       EQU     P3.0
+LCD_RS      EQU     P3.1
+
+            clr     LCD_E               ; clear output pins
+            clr     LCD_RS
+            
+            mov     A, #30              ; wait for 30 ms for the LCD to initialize
+            call    waitMs
+            
+            jmp     $
+            
+waitMs:     rl      A                   ; wait (A * 2 * 2 * 250) microseconds = A milliseconds
+msInner:    mov     R0, #248            ; value 248 accounts for overhead from dec + jnz
+            djnz    R0, $
+            dec     A
+            jnz     msInner
+            ret
+            
+waitUs:     clr     C                   ; clear carry for subtraction and right shift
+            subb    A, #7               ; wait (A / 2 * 2) microseconds, 7 accounts for overhead
+            rrc     A
+            mov     R0, A
+            djnz    R0, $
+            ret
+END
