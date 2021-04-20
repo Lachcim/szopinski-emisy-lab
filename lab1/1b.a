@@ -35,10 +35,7 @@ sendComm:   clr     LCD_RS              ; clear RS for non-data instructions
             
             mov     R0, LCD_DB
             mov     A, LCD_DB           ; shift data register by 4
-            rr      A
-            rr      A
-            rr      A
-            rr      A
+            swap    A
             mov     LCD_DB, A
             setb    LCD_E               ; toggle E pin to send next 4 bits
             clr     LCD_E
@@ -64,10 +61,7 @@ sendData:   setb    LCD_RS              ; set RS for data instructions
             clr     LCD_E
             
             mov     A, LCD_DB           ; shift data register by 4
-            rr      A
-            rr      A
-            rr      A
-            rr      A
+            swap    A
             mov     LCD_DB, A
             setb    LCD_E               ; toggle E pin to send next 4 bits
             clr     LCD_E
