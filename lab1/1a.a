@@ -50,7 +50,8 @@ sendData:   setb    LCD_RS              ; set RS for data instructions
             call    waitUs
             ret
             
-waitMs:     rl      A                   ; wait (A * 2 * 2 * 250) microseconds = A milliseconds
+waitMs:     clr     C                   ; wait (A * 2 * 2 * 250) microseconds = A milliseconds
+            rlc     A
 msInner:    mov     R0, #248            ; value 248 accounts for overhead from dec + jnz
             djnz    R0, $
             dec     A
