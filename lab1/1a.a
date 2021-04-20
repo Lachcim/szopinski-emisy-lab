@@ -8,6 +8,18 @@ LCD_RS      EQU     P3.1
             mov     A, #30              ; wait for 30 ms for the LCD to initialize
             call    waitMs
             
+            mov     LCD_DB, #00111000B  ; function set, 8-bit mode, 2-line display
+            call    sendComm
+            mov     LCD_DB, #00001110B  ; display on, cursor on, blinking off
+            call    sendComm
+            mov     LCD_DB, #00000001B  ; clear display
+            call    sendComm
+            mov     LCD_DB, #00000110B  ; entry mode set, increment, no shift
+            call    sendComm
+            
+            mov     LCD_DB, #'M'        ; send character do display
+            call    sendData
+            
             jmp     $
 
 sendComm:   clr     LCD_RS              ; clear RS for non-data instructions
