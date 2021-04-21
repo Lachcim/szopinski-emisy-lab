@@ -23,24 +23,24 @@ LCD_RS      EQU     P3.1
             
             jmp     $
 
-init4bit:   mov     LCD_DB, #00101000B  ; enable 4-bit mode
+init4bit:   mov     LCD_DB, #00100000B  ; enable 4-bit mode, lower nibble doesn't matter
             setb    LCD_E               ; toggle E pin and wait 40 us
             clr     LCD_E
             mov     A, #40
             call    waitUs
+            ret
 
 sendComm:   clr     LCD_RS              ; clear RS for non-data instructions
             setb    LCD_E               ; toggle E pin to send first 4 bits
             clr     LCD_E
             
-            mov     R0, LCD_DB
-            mov     A, LCD_DB           ; shift data register by 4
+            mov     A, LCD_DB           ; swap nibbles
             swap    A
             mov     LCD_DB, A
             setb    LCD_E               ; toggle E pin to send next 4 bits
             clr     LCD_E
             
-            mov     A, R0               ; if the command is clear display or cursor home, wait for 2 ms
+            swap    A                   ; if the command is clear display or cursor home, wait for 2 ms
             dec     A
             jz      longWait
             dec     A
@@ -60,7 +60,7 @@ sendData:   setb    LCD_RS              ; set RS for data instructions
             setb    LCD_E               ; toggle E pin to send first 4 bits
             clr     LCD_E
             
-            mov     A, LCD_DB           ; shift data register by 4
+            mov     A, LCD_DB           ; swap nibbles
             swap    A
             mov     LCD_DB, A
             setb    LCD_E               ; toggle E pin to send next 4 bits
