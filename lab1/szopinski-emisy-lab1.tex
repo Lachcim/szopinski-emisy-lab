@@ -1,0 +1,50 @@
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{hyperref}
+\usepackage{textgreek}
+\setlength{\parskip}{1em}
+
+\begin{document}
+
+	\title{EMISY lab 1 report:\\
+	Interfacing the 8051 MCU with an LCD}
+	\author{Michał Szopiński 300182\\\\
+	https://github.com/Lachcim/szopinski-emisy-lab}
+	\date{April 21, 2021}
+	\maketitle
+	
+	\setcounter{section}{-1}
+	\section{Abstract}
+	
+	The goal of this laboratory was to connect the AT89C4051 (Intel 8051
+	family) microcontroller to an HD44780-like alphanumeric LCD screen. This
+	involves designing the interfacing hardware and firmware.
+	
+	\section{Hardware implementation}
+	
+	Below is a schematic of the designed circuit.
+	
+	The microcontroller is connected to the power supply through a 100 nF
+	decoupling capacitor to protect it from noise. The reset pin is pulled low
+	through a 10 k\textOmega {} resistor. The resistor, together with a 10
+	\textmu F electrolytic capacitor, forms a power-on reset circuit. Clock
+	signal is provided by a 12 MHz crystal oscillator. This results in a
+	processing speed of 1 machine cycle per microsecond.
+	
+	The LCD is also connected to the power rail through a decoupling capacitor.
+	This is to protect its internal logic circuit from noise. The anode of the
+	backlight LED array is connected through a 5.6 \textOmega {} resistor,
+	providing a current of about 140 mA as prescribed in the datasheet.
+	A potentiometer-based voltage divider is connected to the $V_o$ pin,
+	allowing the user to adjust the contrast.
+	
+	Finally, the 8-bit data bus of the display is connected to port 1 of the
+	microcontroller. When in 4-bit mode, only 4 pins of the bus are utilized.
+	The register select (RS) and chip enable pin (E) are connected to pins 1
+	and 0 of the third port.
+	
+	\includepdf[landscape]{schematic}
+	
+\end{document}
