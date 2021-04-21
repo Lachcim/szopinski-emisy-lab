@@ -1,3 +1,8 @@
+;   ********
+;   TASK1B.ASM
+;   This file contains the 4-bit variant of task 1.
+;   ********
+
 LCD_DB      EQU     P1                  ; set symbols for output pins
 LCD_E       EQU     P3.0
 LCD_RS      EQU     P3.1
@@ -8,7 +13,7 @@ LCD_RS      EQU     P3.1
             mov     A, #30              ; wait for 30 ms for the LCD to initialize
             call    waitMs
             
-            call    init4bit            ; explicitly switch to 4-bit mode
+            call    init4bit            ; switch to 4-bit mode
             mov     LCD_DB, #00101000B  ; function set, 4-bit mode, 2-line display
             call    sendComm
             mov     LCD_DB, #00001110B  ; display on, cursor on, blinking off
@@ -18,7 +23,7 @@ LCD_RS      EQU     P3.1
             mov     LCD_DB, #00000110B  ; entry mode set, increment, no shift
             call    sendComm
             
-            mov     LCD_DB, #'M'        ; send character do display
+            mov     LCD_DB, #'M'        ; send character to display
             call    sendData
             
             jmp     $
@@ -26,6 +31,7 @@ LCD_RS      EQU     P3.1
 init4bit:   mov     LCD_DB, #00100000B  ; enable 4-bit mode, lower nibble doesn't matter
             setb    LCD_E               ; toggle E pin and wait 40 us
             clr     LCD_E
+            
             mov     A, #40
             call    waitUs
             ret

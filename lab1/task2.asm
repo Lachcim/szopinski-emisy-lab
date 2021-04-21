@@ -1,10 +1,15 @@
+;   ********
+;   TASK2.ASM
+;   This file contains the second task.
+;   ********
+
 LCD_DB      EQU     P1                  ; set symbols for output pins
 LCD_E       EQU     P3.0
 LCD_RS      EQU     P3.1
 
-            jmp     start
+            jmp     start               ; jump over text data
             
-ALBUM:      DB      "300182"
+ALBUM:      DB      "300182"            ; define strings to display
             DB      0
 NAME:       DB      "Michal Szopinski"
             DB      0
@@ -28,7 +33,7 @@ start:      clr     LCD_E               ; clear output pins
             call    sendComm
             
             mov     DPL, #LOW(ALBUM)    ; send album number
-            mov     DPH, #HIGH(ALBUM)
+            mov     DPH, #HIGH(ALBUM)   ; load string address to data pointer register
             call    sendString
             
             mov     LCD_DB, #11000000B  ; move cursor to 2nd row (address 40h)

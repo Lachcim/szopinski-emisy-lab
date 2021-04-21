@@ -1,3 +1,8 @@
+;   ********
+;   TASK1A.ASM
+;   This file contains the 8-bit variant of task 1.
+;   ********
+
 LCD_DB      EQU     P1                  ; set symbols for output pins
 LCD_E       EQU     P3.0
 LCD_RS      EQU     P3.1
@@ -17,7 +22,7 @@ LCD_RS      EQU     P3.1
             mov     LCD_DB, #00000110B  ; entry mode set, increment, no shift
             call    sendComm
             
-            mov     LCD_DB, #'M'        ; send character do display
+            mov     LCD_DB, #'M'        ; send character to display
             call    sendData
             
             jmp     $
