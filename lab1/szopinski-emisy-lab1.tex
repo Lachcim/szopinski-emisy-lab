@@ -43,8 +43,184 @@
 	Finally, the 8-bit data bus of the display is connected to port 1 of the
 	microcontroller. When in 4-bit mode, only 4 pins of the bus are utilized.
 	The register select (RS) and chip enable pin (E) are connected to pins 1
-	and 0 of the third port.
+	and 0 of the third port. The read pin is grounded -- no read operations are
+	performed.
 	
 	\includepdf[landscape]{schematic}
+	
+	\section{Firmware implementation}
+	
+	\subsection{Overview}
+	
+	Communication with the HD44780 is done by exchanging data through an 8-bit
+	or a 4-bit data bus, a register select pin, a read/write pin and a chip
+	enable pin.
+	
+	The device may receive ``instruction-type" messages and ``data-type"
+	messages. The former is used for controlling the display, whereas the
+	latter is used to exchange text data. Every message has a predefined
+	execution time which must elapse between subsequent messages.
+	
+	Sending a message involves appropriately setting the RS and RW pins and
+	outputting the data octet through the data bus. Following this, enabling
+	and disabling the E pin causes the display to read the message and commence
+	execution. In 4-bit mode, the two nibbles of the octet are sent in
+	sequence.
+	
+	\subsection{Generic code}
+	
+	\subsubsection{Microsecond wait subroutine (\texttt{waitUs})}
+	
+	This subroutine is used to introduce delay between commands with short
+	execution time. It takes an argument in the A register which denotes the
+	wait time in microseconds.
+	
+	Delay is introduced by placing a value in a register and burning machine
+	cycles in a \texttt{djnz} loop. Because a single \texttt{djnz} instruction
+	takes two cycles to execute, the value in the register must be divided by
+	two.
+	
+	The preprocessing required to calculate the wait cycle count, together with
+	the \texttt{call}-\texttt{ret} combo, introduce a fixed-size overhead. This
+	overhead is eliminated by subtracting a constant from the argument before
+	division. Thanks to this subtraction, the maximum absolute error of the
+	subroutine is 1 \textmu s for odd arguments.
+	
+	\subsubsection{Millisecond wait subroutine (\texttt{waitMs})}
+	
+	This subroutine works in a similar way to \texttt{waitUs}, except that it
+	uses nested loops to achieve longer delay times. It is used for the
+	initialization delay and for commands with long execution time.
+	
+	The internal loop is fine-tuned to generate a delay of 250 ms. The argument
+	of the subroutine is multiplied by two and used as the loop count of the
+	external loop, which produces a delay of $A \times 2 \times 2 \times 250$
+	\textmu s = $A$ ms.
+	
+	Because it would be difficult and of little benefit to eliminate the
+	preprocessing overhead, the subroutine has a constant absolute error of
+	6 \textmu s.
+	
+	\subsubsection{8-bit data send subroutine (\texttt{sendData})}
+	
+	The caller places the data in the output port register and performs the
+	call. The subroutine enables the RS pin to denote a ``data-type" message
+	and toggles the E pin. All data messages require a delay of 40 \textmu s,
+	which is achieved by a call to \texttt{waitUs}.
+	
+	\subsubsection{8-bit instruction send subroutine (\texttt{sendComm})}
+	
+	This subroutine is analogous to \texttt{sendData}, except it drives the RS
+	pin low. Following the E pin flash, the wait time is determined. If the
+	instruction is a ``clear display" or a ``cursor home" command, a delay
+	of 2 ms must be introduced.
+	
+	Three valid codes correspond to the long-wait instructions: \texttt{0x01},
+	\texttt{0x02} and \texttt{0x03}. A \texttt{dec}-\texttt{jz} chain is used
+	to detect these values and change the flow of execution.
+	
+	\subsubsection{Initialization routine}
+	
+	In all three (sub-)tasks, the program begins with the display
+	initialization routine. This involves a delay of 30 ms and the transmission
+	of four instruction messages: function set, display on, clear display,
+	entry mode set. These are performed using \texttt{waitMs} and
+	\texttt{sendComm}.
+	
+	\subsection{Task-specific code}
+	
+	\subsubsection{Task 1a}
+	
+	Because of the modular nature of the program, this task introduces very
+	little purpose-built code. A single call to \texttt{sendData} is made to
+	type a character on the display.
+	
+	\subsubsection{Task 1b}
+	
+	This task uses the same code as task 1a, except that the \texttt{sendData}
+	and \texttt{sendComm} subroutines are modified to operate in 4-bit mode.
+	Similarly, the initialization routine is prepended with code to force the
+	display into 4-bit mode.
+	
+	The display starts in 8-bit mode by default and must be switched into 4-bit
+	mode by sending the ``function set" instruction. This involves outputting
+	the high nibble of the instruction to the 4-bit data bus and toggling the E
+	pin. The display recognizes the transition into 4-bit mode and discards the
+	lower nibble (which was read from unconnected pins DB0 through DB3).
+	
+	Following the transition, the initialization procedure is carried out
+	according to new transmission rules. The microcontroller must toggle the E
+	pin after sending each nibble of the message. The second falling edge
+	begins the execution of the command.
+	
+	For simplicity, arguments to the \texttt{sendData} and \texttt{sendComm}
+	subroutines are still written to the digital output ports. A real
+	implementation could use a separate register to pass the arguments and use
+	the freed 4 pins for something else.
+	
+	\subsubsection{Task 2}
+	
+	Task 2 introduces a subroutine to send character strings to the display as
+	well as a call to the ``set DDRAM address" instruction to change the
+	position of the cursor.
+	
+	The strings are stored at the beginning of the program code memory. To
+	prevent the CPU from executing them as code, a jump instruction is placed
+	at the very beginning of the code. The strings are defined with the
+	\texttt{DB} assembler directive and zero-terminated.
+	
+	The main routine sets the DDRAM address to \texttt{0x4}, which corresponds
+	to the fifth column of the first row. Then, the address of the first
+	string is loaded into the data pointer register and a call to the newly
+	introduced \texttt{sendString} subroutine is made.
+	
+	The \texttt{sendString} subroutine maintains an index which it uses to
+	iterate over the string. Data is retrieved from memory using the
+	\texttt{movc} instruction and sent to the display by means of
+	\texttt{sendData}. If the retrieved byte is zero, the subroutine returns;
+	otherwise, the index is incremented and the loop reiterates.
+	
+	Finally, the cursor is moved to the beginning of the second row (address
+	\texttt{0x40}) and the second string is sent.
+	
+	\section{Final questions}
+	
+	\subsubsection*{How is 4-bit mode configured in the LCD?}
+	
+	The 4-bit mode is configured by sending the ``function set" instruction to
+	the display. The high nibble contains information on whether the 8-bit or
+	the 4-bit mode is used. The display discards the low nibble and switches
+	to 4-bit mode.
+	
+	\subsubsection*{Why is it convenient to use a 12 MHz system clock with
+	8051 microcontrollers?}
+	
+	On the 8051, a single machine cycle corresponds to 12 clock cycles. At 12
+	MHz, this means that a single instruction is executed in either 1 or 2
+	\textmu s. This is useful for timing.
+	
+	\subsubsection*{Are delay methods presented in the tutorial part optimal?
+	Is it possible to generate precise time intervals using loops and
+	\texttt{nop} commands?}
+	
+	They are optimal in that they use nested loops, which saves memory and
+	gives long delays. It's possible to fine-tune a wait subroutine to have a
+	maximum error of 1 \textmu s, as demonstrated in this report.
+	
+	\subsubsection*{How many $2 \times 16$ displays can you connect to the
+	AT89C4051 microcontroller without using any additional ICs?}
+	
+	You can connect up to 10 displays. The AT89C4051 has 15 general-purpose IO
+	pins. You can use 5 of them for a common DB/RS bus and the remaining 10 to
+	enable writing to individual displays.
+	
+	\section{Declaration of authorship}
+	
+	I declare that this piece of work (solving laboratory 1) which is the basis
+	for recognition of achieving learning outcomes in the Microprocessor
+	Systems (EMISY) course was completed on my own.
+	
+	\noindent
+	Michał Szopiński 300182
 	
 \end{document}
