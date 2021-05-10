@@ -1,0 +1,148 @@
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{hyperref}
+\usepackage{textgreek}
+\setlength{\parskip}{1em}
+
+\begin{document}
+
+	\title{EMISY lab 2 report:\\
+	Interfacing the 8051 MCU with a 7-segment display}
+	\author{Michał Szopiński 300182\\\\
+	https://github.com/Lachcim/szopinski-emisy-lab}
+	\date{May 10, 2021\\}
+	\maketitle
+	
+	\setcounter{section}{-1}
+	\section{Abstract}
+	
+	The goal of this laboratory was to connect the AT89C4051 (Intel 8051
+	family) microcontroller to a generic quadruple 7-segment display. This
+	involves designing the interfacing hardware and firmware.
+	
+	\section{Hardware implementation}
+	
+	Below is a schematic of the designed circuit. It is common for all tasks.
+	
+	The seven-segment display uses the ``common anode" configuration, which
+	enables the microcontroller to sink currents of up to 10 mA. The cathode
+	bus is used for enabling individual segments in a single display. A decoder
+	enables current to each of the displays on demand through a PNP transistor.
+	The currently enabled display is selected by sending its address through
+	a 2-bit address bus and raising the chip select pin of the decoder.
+	
+	\includepdf[landscape]{schematic}
+	
+	\section{Firmware implementation}
+	
+	\subsection{Task 1}
+	
+	The goal of this task was to design a subroutine whose purpose is to
+	display the specified pattern of segments on the given display. The
+	subroutine accepts two arguments describing the bit pattern as an 8-bit
+	value and an address as a 2-bit integer ranging from 0 to 3.
+	
+	It starts by disabling the chip select pin of the decoder, blanking all
+	displays. Then, the supplied bit pattern is inverted, marking enabled
+	segments with zeros and disabled segments with ones. The inverted value is
+	moved to the segment bus output port.
+	
+	To simplify addressing, the lowest 2 bits of port 1 were chosen as the
+	address bus for the decoder. The two-bit address may be easily outputted
+	through port 1 by performing bitwise operations on its SFR.
+	
+	Once the bit pattern and the display address are ready, the decoder is
+	reenabled and the pattern appears on the display.
+	
+	\subsection{Task 2}
+	
+	The goal of this task was to blink a LED on one of the displays in
+	intervals of 20 ms. The code starts with a configuration procedure in which
+	timer 0 of the 8051 is configured as a 16-bit non-gated timer. Global
+	interrupts are enabled and the timer overflow interrupt is enabled as well.
+	
+	The overflow interrupt occurs when the timer register exceeds $2^{16} - 1$
+	and rolls over. To ensure intervals of 20 ms, the initial value of the
+	timer is set to $2^{16} - 20000 + 7$, with the value $7$ to account for
+	overhead from executing the handler.
+	
+	At the end of the initial procedure, the decoder is enabled and the
+	leftmost display is selected. The microcontroller then enters an infinite
+	no-op loop and lets interrupt handlers do the rest.
+	
+	The handler toggles one of the pins of the segment bus. Before it exits, it
+	resets the timer to the previously calculated value.
+	
+	As a side note, the suggestion to ``clear overflow flag" as stated in the
+	manual appears to be pointless since the flag is automatically cleared
+	when the interrupt handler is vectored.
+	
+	\subsection{Task 3}
+	
+	The goal of this task was to display the final four digits of the student's
+	album number on the 7-segment display. Because EDSIM doesn't support visual
+	interlacing of individual displays, the digits must be displayed
+	sequentially in noticeable intervals.
+	
+	The main functionality was implemented in a similar way to the one
+	presented in task 1. A dedicated subroutine displays the specified digit at
+	the specified position. It uses a lookup table to convert a decimal value
+	to the right segment pattern.
+	
+	The code starts by configuring the timer in the same way as it was done in
+	task 2, although this time letting it overflow after the natural boundary
+	of $2^{16} - 1$ cycles. This yields an interrupt rate of once per 65 ms,
+	observable in EDSIM.
+	
+	The interrupt handler iterates over the album number digits stored in
+	program memory. The iterator is used for retrieving the digits and
+	determining their position on the display. Both of these parameters are
+	passed as arguments to the digit displaying subroutine. At the end of the
+	handler, the iterator is decremented and its modulo 4 is taken.
+	
+	\section{Final questions}
+	
+	\subsubsection*{Describe how is a display selected in EDSIM simulator?}
+	
+	EDSIM uses a decoder chip to convert a 2-bit address to one of the 4
+	active-low outputs, each of which enables current to a single display. The
+	chip select pin enables the decoder.
+	
+	\subsubsection*{What is the difference between common anode and common
+	cathode LED displays in terms of interfacing them with MCU?}
+	
+	Common anode displays must have their cathodes switched to ground to
+	enable them, whereas common cathode displays require that their anodes are
+	switched to the power rail. The common anode configuration allows for a
+	greater current flowing through the MCU (for 8051 chips).
+	
+	\subsubsection*{How can be a timer peripheral used to generate precise time
+	intervals (precise delays)?}
+	
+	The timer counter register may be set to a pre-calculated value each time
+	the overflow interrupt handler fires, which allows the rate of overflow
+	interrupts to be accurately controlled.
+	
+	\subsubsection*{How does multiplexing driving mode of LED displays work?
+	Compare it with static driving mode of LED displays in terms of required
+	GPIO pins and current consumption. When does it make sense to use
+	multiplexing and when does it not?}
+	
+	LED displays are multiplexed by rapidly switching between individual
+	digits, so that the human eye cannot perceive any blinking. Static driving
+	requires more pins and draws more current due to a higher number of enabled
+	LEDs. Multiplexing is generally the preferred method, albeit static mode
+	may be required for when the display is viewed through a camera.
+	
+	\section{Declaration of authorship}
+	
+	I declare that this piece of work (solving laboratory 1) which is the basis
+	for recognition of achieving learning outcomes in the Microprocessor
+	Systems (EMISY) course was completed on my own.
+	
+	\noindent
+	Michał Szopiński 300182
+	
+\end{document}
