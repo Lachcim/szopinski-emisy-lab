@@ -1,0 +1,74 @@
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{hyperref}
+\usepackage{textgreek}
+\setlength{\parskip}{1em}
+
+\begin{document}
+
+	\title{EMISY lab 3 report:\\
+	Interfacing the 8051 MCU with a keypad and a switch}
+	\author{Michał Szopiński 300182\\\\
+	https://github.com/Lachcim/szopinski-emisy-lab}
+	\date{May 24, 2021}
+	\maketitle
+	
+	\setcounter{section}{-1}
+	\section{Abstract}
+	
+	The goal of this laboratory was to connect the AT89C4051 (Intel 8051
+	family) microcontroller to a keypad and a switch and to observe the changes
+	in the input.
+	
+	\section{Hardware implementation}
+	
+	A switch was connected to one of the pins of port 2. When open, the pin is
+	pulled high through a pull-up resistor. When closed, the pin is pulled low
+	through the switch.
+	
+	The LCD module was connected in the 8-bit configuration. Port 1 serves as
+	the data bus and two pins from port 3 control the RS and E inputs.
+	
+	The keypad was connected to seven pins of port 0. This configuration would
+	allow the keys to be scanned and read individually; this, however, was not
+	necessary in this laboratory. The three outputs of the keypad are connected
+	to an AND gate to trigger an external interrupt each time a key is pressed.
+	
+	Finally, an LED was connected to the MCU with the cathode facing the output
+	pin.
+	
+	\section{Firmware implementation}
+	
+	\subsection{Task 1}
+	
+	In this task, the LCD display is to display a message each time a switch is
+	toggled on, and to clear the screen each time the switch is disabled.
+	
+	This is done by simply waiting for the switch to come on, calling the
+	string displaying subroutine from lab 1, waiting for the switch to turn
+	off, calling the screen clearing subroutine, and looping over.
+	
+	\subsection{Task 2}
+	
+	In this task, an LED is to be toggled each time a key is pressed.
+	
+	All of the row pins of the keypad are driven low, which causes the column
+	pins to be pulled low whenever a key is pressed. External interrupt 1 is
+	configured to trigger on the falling edge of the input signal. As a result,
+	the interrupt fires on each key press.
+	
+	In the interrupt, a logical XOR is performed on the LED port, which causes
+	the LED to toggle.
+	
+	\section{Declaration of authorship}
+	
+	I declare that this piece of work (solving laboratory 1) which is the basis
+	for recognition of achieving learning outcomes in the Microprocessor
+	Systems (EMISY) course was completed on my own.
+	
+	\noindent
+	Michał Szopiński 300182
+	
+\end{document}
