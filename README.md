@@ -5,5 +5,5 @@ My implementation of the Microprocessor Systems laboratory for Mr Gąsowski, MSc
 ## Contents
 
 * Lab 1: interfacing with an LCD
-* Lab 1: interfacing with a 7-segment display
-* Lab 1: interfacing with a keypad and a switch
+* Lab 2: interfacing with a 7-segment display
+* Lab 3: interfacing with a keypad and a switch
